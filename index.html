@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>MyFreeCams API</title>
+
+        <script src="./scripts/main.js" type="module" defer></script>
+    </head>
+
+    <style>
+        body {
+            margin: 0;
+            background-color: #333333;
+        }
+
+        a {
+            cursor: pointer;
+            color: deepskyblue;
+        }
+
+        .model-count {
+            color: white;
+        }
+
+        .wchat {
+            position: absolute;
+            right: 0;
+            top: 0;
+            color: white;
+            background-color: #333333;
+        }
+
+        .model-list {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            height: calc(100vh - 20px);
+            padding-left: 10px;
+            border: 1px solid #eeeeee;
+            overflow: auto;
+        }
+
+        .model-data {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+        }
+
+        .model-data > span:nth-child(2) {
+            width: 115px;
+        }
+
+        .model-data > div:nth-child(1) {
+            display: flex;
+            flex-direction: column;
+            width: 130px;
+            color: white;
+        }
+
+        .model-data > :nth-child(1) > div:nth-child(1) {
+            width: 130px;
+            overflow: hidden;
+        }
+
+        .model-data > div:nth-child(3) {
+            color: #bbbbbb;
+        }
+
+        .model-item > div:nth-child(2) {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+</style>
+
+    <body>
+        <div class="model-count">Found models: 0</div>
+        <div class="model-list"></div>
+        <span class="wchat">loading...</span>
+    </body>
+</html>
