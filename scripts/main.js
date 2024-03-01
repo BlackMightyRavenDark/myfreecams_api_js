@@ -522,6 +522,8 @@ function connectSocket() {
         nodeWchat.textContent = "Reconnecting...";
         console.log(`${getFormattedDateTime()}> The socket is closed`);
         clearInterval(timerPing);
+        console.log(`${getFormattedDateTime()}> The ping timer is deactivated`);
+
         console.log(`${getFormattedDateTime()}> Reconnecting in 3 seconds...`);
 
         setTimeout(() => connectSocket(), 3000);
