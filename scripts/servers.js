@@ -1,3 +1,5 @@
+import { getFormattedDateTime } from "./main.js"
+
 //https://myfreecams.com/_js/serverconfig.js
 //To get access from Russia, add 'thor.' before 'myfreecams'. I don't know how it works.
 export const serverList = {
@@ -1006,7 +1008,7 @@ export function loadDomainList() {
         MYFREECAMS_DOMAINS.splice(0, MYFREECAMS_DOMAINS.length);
         for (let k in json) { MYFREECAMS_DOMAINS.push(json[k]); }
     } catch (ex) {
-        console.error(ex);
+        console.error(`${getFormattedDateTime()}> ${ex}`);
         resetDomainList();
         saveDomainList();
     }

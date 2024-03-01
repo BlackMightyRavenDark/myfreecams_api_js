@@ -79,7 +79,7 @@ async function fetchJsonBypassCors(url) {
         const r = await fetch(proxyUrl);
         return r.status === 200 ? await r.json() : null;
     } catch (ex) {
-        console.error("The CORS bypassing server is down! Can't get full model list!");
+        console.error(`${getFormattedDateTime()}> The CORS bypassing server is down! Can't get full model list!`);
         console.error(ex);
         return null;
     }
@@ -279,10 +279,10 @@ async function processPacket(packet) {
                 }
 
                 if (isModelConnected(modelObj)) {
-                    //console.log(`Model ${modelObj.name} is connected`);
+                    //console.log(`${getFormattedDateTime()}> Model ${modelObj.name} is connected`);
                     modelObj["previousState"] = modelObj.state;
                 } else if (isModelDisconnected(modelObj)) {
-                    //console.log(`Model ${modelObj.name} is disconnected`);
+                    //console.log(`${getFormattedDateTime()}> Model ${modelObj.name} is disconnected`);
                     modelObj["previousState"] = modelObj.state;
                 }
 
@@ -457,12 +457,12 @@ function connectSocket() {
 
     socket.onopen = function(e) {
         nodeWchat.textContent = `Server: ${WCHAT}`;
-        console.log("Connection is established");
+        console.log(`${getFormattedDateTime()}> Connection is established`);
         socket.send(FC_COMMAND_HELLO);
         socket.send(FC_COMMAND_LOGIN);
 
         timerPing = setInterval(() => socket.send(FC_COMMAND_PING), 10000);
-        console.log("The ping timer is activated");
+        console.log(`${getFormattedDateTime()}> The ping timer is activated`);
     }
 
     socket.onmessage = function(event)	{
@@ -485,7 +485,7 @@ function connectSocket() {
             if (nStrLen > 0 && nStrLen < 1000000) {
                 if (nPos + nStrLen + 6 > m_sQueued.length) {
                     // We can't process this packet yet, lets queue it until we get more data
-                    console.error(`Must queue ${m_sQueued.length - nPos} bytes, pos: ${nPos}, strlen: ${nStrLen} overruns m_sQueued.length: ${m_sQueued.length}`);
+                    console.error(`${getFormattedDateTime()}> Must queue ${m_sQueued.length - nPos} bytes, pos: ${nPos}, strlen: ${nStrLen} overruns m_sQueued.length: ${m_sQueued.length}`);
                     break;
                 }
 
@@ -494,13 +494,13 @@ function connectSocket() {
                 if (sChunk != -1) {
                     packets.push(sChunk);
                 } else {
-                    console.error(`onmessage: chunk sz ${nStrLen}, but slice failed (-1), pos: ${nPos}, m_sQueued.length: ${m_sQueued.length}`);
+                    console.error(`${getFormattedDateTime()}> onmessage: chunk sz ${nStrLen}, but slice failed (-1), pos: ${nPos}, m_sQueued.length: ${m_sQueued.length}`);
                     break;
                 }
 
                 nPos += nStrLen + 6;
             } else {
-                console.error(`onmessage: 'nStrLen' is bad: ${nStrLen}, nPos: ${nPos}, m_sQueued.length: ${m_sQueued.length}`);
+                console.error(`${getFormattedDateTime()}> onmessage: 'nStrLen' is bad: ${nStrLen}, nPos: ${nPos}, m_sQueued.length: ${m_sQueued.length}`);
                 return;
             }
         }
@@ -512,20 +512,25 @@ function connectSocket() {
     };
 
     socket.onerror = function(e) {
-        console.error("Socket error");
+        console.error(`${getFormattedDateTime()}> Socket error`);
         clearInterval(timerPing);
         timerPing = null;
-        console.log("The ping timer is deactivated");
+        console.log(`${getFormattedDateTime()}> The ping timer is deactivated`);
     }
 
     socket.onclose = function(e) {
         nodeWchat.textContent = "Reconnecting...";
-        console.log("The socket is closed");
+        console.log(`${getFormattedDateTime()}> The socket is closed`);
         clearInterval(timerPing);
-        console.log("Reconnecting in 3 seconds...");
+        console.log(`${getFormattedDateTime()}> Reconnecting in 3 seconds...`);
 
         setTimeout(() => connectSocket(), 3000);
     }
+}
+
+export function getFormattedDateTime() {
+    const date = new Date();
+    return date.toUTCString();
 }
 
 clearChildNodes(nodeModelListRoot);
