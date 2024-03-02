@@ -92,7 +92,19 @@ async function getModelListResponceJson(msg) {
     const serverId = msg["serv"];
 
     for (let i = 0; i < MYFREECAMS_DOMAINS.length; ++i) {
-        const url = `${MYFREECAMS_DOMAINS[i]}/php/FcwExtResp.php?host=${WCHAT}&respkey=${respKey}&type=14&opts=256&serv=${serverId}&arg1=${arg1}&arg2=${arg2}&owner=0&nc=2847942&debug=cams`;
+        const query = new URLSearchParams();
+        query.append("host", WCHAT);
+        query.append("respkey", respKey);
+        query.append("type", "14");
+        query.append("opts", "256");
+        query.append("serv", serverId);
+        query.append("arg1", arg1);
+        query.append("arg2", arg2);
+        query.append("owner", "0");
+        query.append("nc", "2847942");
+        query.append("debug", "cams");
+
+        const url = `${MYFREECAMS_DOMAINS[i]}/php/FcwExtResp.php?${query.toString()}`;
         const responce = await fetchJsonBypassCors(url);
         if (responce) {
             if (i > 0) {
@@ -165,7 +177,7 @@ function parseModelList(unparsedJson) {
                 }
                 //TODO: Detect model's avatar image URL.
 
-                addModelNode(modelObj);
+                addOrUpdateModelNode(modelObj);
             }
         }
     }
@@ -177,17 +189,22 @@ function getModelIdFromUserId(userId) {
 
 function getHlsPlaylistUrl(modelObj, aCheckBoxChecked) {
     const modelId = getModelIdFromUserId(modelObj.userId);
-    const realCamServer = getCamServer(modelObj.camServer, modelId);
+    const realCamServerId = getRealCamServerId(modelObj.camServer, modelId);
     const clientVersion = "1.97.22";
     const randomNumberNc = Math.random();
 
     //Sometimes, we need to add 'a_' between 'mfc_' and '${modelId}', like this: 'mfc_a_${modelId}'.
     //It's working for some models. I don't know why.
-    const aParameter = aCheckBoxChecked ? "a_" : "";
-    return `https://edgevideo.myfreecams.com/llhls/NxServer/${realCamServer}/ngrp:mfc_${aParameter}${modelId}.f4v_cmaf/playlist_sfm4s.m3u8?nc=${randomNumberNc}&v=${clientVersion}`;
+    const aParameterValue = aCheckBoxChecked ? "a_" : "";
+    const query = new URLSearchParams();
+    query.append("nc", randomNumberNc);
+    query.append("v", clientVersion);
+
+    const edgeVideoDomain = "https://edgevideo.myfreecams.com";
+    return `${edgeVideoDomain}/llhls/NxServer/${realCamServerId}/ngrp:mfc_${aParameterValue}${modelId}.f4v_cmaf/playlist_sfm4s.m3u8?${query.toString()}`;
 }
 
-function getCamServer(camServ, modelId) {
+function getRealCamServerId(camServ, modelId) {
     if (!camServ) { return 0; }
 
     const regExp = /^\D+/g;
@@ -214,6 +231,7 @@ function getCamServer(camServ, modelId) {
         if ((typeOfModelId === "number" || typeOfModelId === "bigint") && modelId >= FCS_CHANNEL_ID_START) {
             realCamServer -= 200;
         }
+
         return realCamServer;
     }
 }
@@ -286,7 +304,7 @@ async function processPacket(packet) {
                     modelObj["previousState"] = modelObj.state;
                 }
 
-                addModelNode(modelObj);
+                addOrUpdateModelNode(modelObj);
                 return modelObj;
             }
         }
@@ -330,7 +348,7 @@ function findOrCreateModelNode(modelName) {
     return node;
 }
 
-function addModelNode(modelObj) {
+function addOrUpdateModelNode(modelObj) {
     const nodeModel = findOrCreateModelNode(modelObj.name);
     if (nodeModel.childNodes.length === 0) {
         const nodeName = document.createElement("div");
@@ -350,7 +368,7 @@ function addModelNode(modelObj) {
         nodeCheckBoxA.setAttribute("type", "checkbox");
         nodeCheckBoxA.setAttribute("title", "Set/unset misterious 'a_' parameter in URL (it's needed sometimes)");
         nodeCheckBoxA.setAttribute("id", `${modelObj.name}_${modelObj.userId}_${Math.random()}`);
-        nodeCheckBoxA.onchange = (e) => addModelNode(modelObj);
+        nodeCheckBoxA.onchange = (e) => addOrUpdateModelNode(modelObj);
 
         const url = getHlsPlaylistUrl(modelObj, false);
         const nodeUrl = document.createElement("a");
@@ -391,8 +409,8 @@ function addModelNode(modelObj) {
     }
 
     const countData = getModelCount();
-    let s = `Found models: ${modelList.length}, Online: ${countData[0]}`;
-    if (countData[0]) { s += ` (Free: ${countData[1]}, Paid: ${countData[2]}) <Lime-colored are online and free>`; }
+    let s = `Found models: ${modelList.length}, Online: ${countData.online}`;
+    if (countData.online) { s += ` (Free: ${countData.free}, Paid: ${countData.paid}) <Lime-colored are online and free>`; }
     nodeModelCount.textContent = s;
 }
 
@@ -442,7 +460,7 @@ function getModelCount() {
         }
     });
 
-    return [onlineCount, freeCount, paidCount];
+    return { "online": onlineCount, "free": freeCount, "paid": paidCount };
 }
 
 function clearChildNodes(node) {
@@ -505,7 +523,7 @@ function connectSocket() {
             }
         }
 
-        for (let i = 0; i < packets.length; ++i) {
+        while (packets.length) {
             processPacket(packets[0]);
             packets.splice(0, 1);
         }
