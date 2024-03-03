@@ -107,8 +107,8 @@ async function getModelListResponceJson(msg) {
         query.append("debug", "cams");
 
         const url = `${MYFREECAMS_DOMAINS[i]}/php/FcwExtResp.php?${query.toString()}`;
-        const responce = await fetchJsonBypassCors(url);
-        if (responce) {
+        const response = await fetchJsonBypassCors(url);
+        if (response) {
             if (i > 0) {
                 const tmp = MYFREECAMS_DOMAINS[i];
                 MYFREECAMS_DOMAINS.splice(i, 1);
@@ -117,7 +117,7 @@ async function getModelListResponceJson(msg) {
                 saveDomainList();
             }
 
-            return responce;
+            return response;
         } else {
             console.error(`${getFormattedDateTime()}> Can't get full model list!`);
         }
