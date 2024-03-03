@@ -100,6 +100,8 @@ async function getModelListResponceJson(msg) {
     const serverId = msg["serv"];
 
     for (let i = 0; i < MYFREECAMS_DOMAINS.length; ++i) {
+        const ncValue = Math.round(new Date().getTime() / 600000);
+
         const query = new URLSearchParams();
         query.append("host", WCHAT);
         query.append("respkey", respKey);
@@ -109,7 +111,7 @@ async function getModelListResponceJson(msg) {
         query.append("arg1", arg1);
         query.append("arg2", arg2);
         query.append("owner", "0");
-        query.append("nc", "2847942");
+        query.append("nc", ncValue);
         query.append("debug", "cams");
 
         const url = `${MYFREECAMS_DOMAINS[i]}/php/FcwExtResp.php?${query.toString()}`;
