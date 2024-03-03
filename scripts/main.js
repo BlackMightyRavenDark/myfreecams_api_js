@@ -17,6 +17,12 @@ const FC_COMMAND_PING = "0 0 0 0 0\n\0";
 const FCTYPE_SESSIONSTATE = 20;
 const FCL_CAMS = 21;
 const FCVIDEO_RX_IDLE = 90;
+const FCVIDEO_RX_CLUB = 94;
+const FCVIDEO_RX_GRP = 93;
+const FCVIDEO_RX_PVT = 91;
+const FCVIDEO_TX_CLUB = 14;
+const FCVIDEO_TX_GRP = 13;
+const FCVIDEO_TX_PVT = 12;
 const FCVIDEO_TX_IDLE = 0;
 const FCVIDEO_TX_AWAY = 2;
 const FCVIDEO_OFFLINE = 127;
@@ -362,9 +368,11 @@ async function addOrUpdateModelNode(modelObj) {
         const nodeAge = document.createElement("div");
         nodeAge.textContent = `Age: ${modelObj.age ? modelObj.age : "[N / A]"}`;
 
-        const nodeStreamState = document.createElement("span");
+        const nodeStreamState = document.createElement("div");
         nodeStreamState.textContent = `Stream state: ${modelObj.state}`;
-        nodeStreamState.style.color = getStreamStateLabelColor(modelObj);
+
+        const nodeStreamStateDescribed = document.createElement("div");
+        nodeStreamStateDescribed.textContent = getStreamStateDescription(modelObj.state);
 
         const nodeUserLocation = document.createElement("div");
         nodeUserLocation.textContent = formatUserLocation(modelObj);
@@ -385,6 +393,11 @@ async function addOrUpdateModelNode(modelObj) {
         nodeNameAgeWrapper.appendChild(nodeName);
         nodeNameAgeWrapper.appendChild(nodeAge);
 
+        const nodeStreamStateWrapper = document.createElement("div");
+        nodeStreamStateWrapper.style.color = getStreamStateLabelColor(modelObj);
+        nodeStreamStateWrapper.appendChild(nodeStreamState);
+        nodeStreamStateWrapper.appendChild(nodeStreamStateDescribed);
+
         const nodeUrlWrapper = document.createElement("div");
         nodeUrlWrapper.appendChild(nodeCheckBoxA);
         nodeUrlWrapper.appendChild(nodeUrl);
@@ -392,21 +405,23 @@ async function addOrUpdateModelNode(modelObj) {
         const nodeModelData = document.createElement("div");
         nodeModelData.classList.add("model-data");
         nodeModelData.appendChild(nodeNameAgeWrapper);
-        nodeModelData.appendChild(nodeStreamState);
+        nodeModelData.appendChild(nodeStreamStateWrapper);
         nodeModelData.appendChild(nodeUserLocation);
 
         nodeModel.appendChild(nodeModelData);
         nodeModel.appendChild(nodeUrlWrapper);
     } else {
         const nodeUserLocation = nodeModel.childNodes[0].childNodes[2];
-        const nodeStreamState = nodeModel.childNodes[0].childNodes[1];
+        const nodeStreamState = nodeModel.childNodes[0].childNodes[1].childNodes[0];
+        const nodeStreamStateDescribed = nodeModel.childNodes[0].childNodes[1].childNodes[1];
         const nodeCheckBoxA = nodeModel.childNodes[1].childNodes[0];
         const nodeUrl = nodeModel.childNodes[1].childNodes[1];
 
         nodeUserLocation.textContent = formatUserLocation(modelObj);
 
         nodeStreamState.textContent = `Stream state: ${modelObj.state}`;
-        nodeStreamState.style.color = getStreamStateLabelColor(modelObj);
+        nodeStreamState.parentNode.style.color = getStreamStateLabelColor(modelObj);
+        nodeStreamStateDescribed.textContent = getStreamStateDescription(modelObj.state);
 
         const url = await getHlsPlaylistUrl(modelObj, nodeCheckBoxA.checked);
         nodeUrl.textContent = url;
@@ -415,7 +430,7 @@ async function addOrUpdateModelNode(modelObj) {
 
     const countData = getModelCount();
     let s = `Found models: ${modelList.length}, Online: ${countData.online}`;
-    if (countData.online) { s += ` (Free: ${countData.free}, Paid: ${countData.paid}) <Lime-colored are online and free>`; }
+    if (countData.online) { s += ` (Free: ${countData.free}, Paid: ${countData.paid})`; }
     nodeModelCount.textContent = s;
 }
 
@@ -438,6 +453,34 @@ function getStreamStateLabelColor(modelObj) {
             return "white";
 
         default: return "orange";
+    }
+}
+
+function getStreamStateDescription(state) {
+    switch (state) {
+        case FCVIDEO_TX_IDLE:
+            return "Online (Free)";
+
+        case FCVIDEO_TX_CLUB:
+        case FCVIDEO_RX_CLUB:
+            return "Online (Club show)";
+
+        case FCVIDEO_TX_GRP:
+        case FCVIDEO_RX_GRP:
+            return "Online (Group show)";
+
+        case FCVIDEO_TX_PVT:
+        case FCVIDEO_RX_PVT:
+            return "Online (Private show)";
+
+        case FCVIDEO_TX_AWAY:
+            return "Offline (Away)";
+
+        case FCVIDEO_OFFLINE:
+        case FCVIDEO_RX_IDLE:
+            return "Offline";
+
+        default: return "Unknown";
     }
 }
 
