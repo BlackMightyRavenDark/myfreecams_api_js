@@ -174,6 +174,10 @@ function parseModelList(unparsedJson) {
                 modelObj["topic"] = decodeURIComponent(rData[i][23]);
                 modelObj["hidecs"] = rData[i][24];
 
+                if (!modelObj["avatarUrl"]) {
+                    modelObj["avatarUrl"] = getModelAvatarUrl(modelObj["userId"]);
+                }
+
                 if (dataConfig.length > 8) {
                     const xObj = dataConfig[8]["x"];
                     if (xObj) {
@@ -185,7 +189,6 @@ function parseModelList(unparsedJson) {
                         modelObj["x"] = x;
                     }
                 }
-                //TODO: Detect model's avatar image URL.
 
                 addOrUpdateModelNode(modelObj);
             }
@@ -247,6 +250,18 @@ async function getRealCamServerId(camServ, modelId) {
     }
 }
 
+function getModelAvatarUrl(userId, avatarImageSizeXY) {
+    if (!userId) { return ""; }
+
+    const typeOfUserId = typeof(userId);
+    const userIdString = typeOfUserId === "string" ? userId : (typeOfUserId === "number" || typeOfUserId === "bigint") ? userId.toString() : "";
+    if (!userIdString || userIdString.length < 3) { return ""; }
+    const firstThree = userIdString.substring(0, 3);
+    if (!avatarImageSizeXY || avatarImageSizeXY < 10) { avatarImageSizeXY = 90; }
+
+    return `https://img.mfcimg.com/photos2/${firstThree}/${userIdString}/avatar.${avatarImageSizeXY}x${avatarImageSizeXY}.jpg`;
+}
+
 async function processPacket(packet) {
     const splitted = packet.split(" ");
     if (splitted.length > 5 && isJson(splitted[5])) {
@@ -305,6 +320,10 @@ async function processPacket(packet) {
                         modelObj["continent"] = mObj["continent"];
                     }
                     modelObj["topic"] = decodeURIComponent(mObj["topic"]) || "";
+                }
+
+                if (!modelObj["avatarUrl"]) {
+                    modelObj["avatarUrl"] = getModelAvatarUrl(modelObj["userId"]);
                 }
 
                 if (isModelConnected(modelObj)) {
