@@ -1,8 +1,7 @@
+import { fetchJsonBypassCors } from "./main.js";
 import { getFormattedDateTime } from "./main.js"
 
-//https://myfreecams.com/_js/serverconfig.js
-//To get access from Russia, add 'thor.' before 'myfreecams'. I don't know how it works.
-export const serverList = {
+const predefinedServerList = {
     "ajax_servers": [],
     "chat_servers": ["wchat74", "wchat75", "wchat67", "wchat14", "wchat16", "wchat17", "wchat18", "wchat19", "wchat5", "wchat7", "wchat8", "wchat10", "wchat11", "wchat12", "wchat13", "wchat15", "wchat21", "wchat22", "wchat23", "wchat24", "wchat25", "wchat26", "wchat28", "wchat29", "wchat30", "wchat31", "wchat32", "wchat34", "wchat35", "wchat36", "wchat37", "wchat38", "wchat39", "wchat41", "wchat43", "wchat44", "wchat45", "wchat46", "wchat47", "wchat48", "wchat49", "wchat50", "wchat51", "wchat52", "wchat53", "wchat54", "wchat55", "wchat56", "wchat57", "wchat58", "wchat59", "wchat60", "wchat61", "wchat62", "wchat63", "wchat64", "wchat66", "wchat68", "wchat69", "wchat70", "wchat71", "wchat72", "wchat73", "zbuild-edgetool", "dynworker-b168a06e1a9db9721fd269", "dynworker-1894edfc2e702ec061837b", "dynworker-ac5421e6fb12133d7c0078", "dynworker-27a5bc5564d5a9342c83e1", "dynworker-4a0a3dd573eac3a4117c7a", "dynworker-527eceb2b3f549e733f7db"],
     "h5video_servers": {
@@ -982,7 +981,9 @@ export const serverList = {
     }
 }
 
+export let serverList;
 export const MYFREECAMS_DOMAINS = [];
+const MYFREECAMS_SERVERLIST_URLS = [];
 
 function resetDomainList() {
     MYFREECAMS_DOMAINS.splice(0, MYFREECAMS_DOMAINS.length);
@@ -990,7 +991,7 @@ function resetDomainList() {
     MYFREECAMS_DOMAINS.push("https://thor.myfreecams.com"); //Reachable from Russia
 }
 
-function saveDomainList() {
+export function saveDomainList() {
     const t = JSON.stringify(MYFREECAMS_DOMAINS);
     localStorage.setItem("domains", t);
 }
@@ -1011,5 +1012,75 @@ export function loadDomainList() {
         console.error(`${getFormattedDateTime()}> ${ex}`);
         resetDomainList();
         saveDomainList();
+    }
+}
+
+function resetServerListUrls() {
+    MYFREECAMS_SERVERLIST_URLS.splice(0, MYFREECAMS_SERVERLIST_URLS.length);
+    MYFREECAMS_SERVERLIST_URLS.push("https://myfreecams.com/_js/serverconfig.js");
+    MYFREECAMS_SERVERLIST_URLS.push("https://thor.myfreecams.com/_js/serverconfig.js"); //Reachable from Russia
+}
+
+function saveServerListUrls() {
+    if (MYFREECAMS_SERVERLIST_URLS.length) {
+        localStorage.setItem("serverListUrls", JSON.stringify(MYFREECAMS_SERVERLIST_URLS));
+    } else if (localStorage.getItem("serverListUrls")) {
+        localStorage.removeItem("serverListUrls");
+    }
+}
+
+function loadServerListUrls() {
+    try {
+        const t = localStorage.getItem("serverListUrls");
+        const json = JSON.parse(t);
+        if (json) {
+            MYFREECAMS_SERVERLIST_URLS.splice(0, MYFREECAMS_SERVERLIST_URLS.length);
+            for (let k in json) { MYFREECAMS_SERVERLIST_URLS.push(element); }
+
+            saveServerListUrls();
+            return;
+        }
+    } catch (ex) {
+        console.error(`${getFormattedDateTime()}> ${ex}`);
+    }
+
+    resetServerListUrls();
+}
+
+export async function getServerList() {
+    if (serverList) { return serverList; }
+
+    try {
+        const t = localStorage.getItem("servers");
+        serverList = JSON.parse(t);
+        if (serverList) { return serverList; }
+
+        loadServerListUrls();
+        saveServerListUrls();
+
+        for (let i = 0; i < MYFREECAMS_SERVERLIST_URLS.length; ++i) {
+            const response = await fetchJsonBypassCors(MYFREECAMS_SERVERLIST_URLS[i]);
+            if (response) {
+                if (i > 0) {
+                    const tmp = MYFREECAMS_SERVERLIST_URLS[i];
+                    MYFREECAMS_SERVERLIST_URLS.splice(i, 1);
+                    MYFREECAMS_SERVERLIST_URLS.splice(0, 0, tmp);
+
+                    saveServerListUrls();
+                }
+
+                serverList = response;
+                localStorage.setItem("servers", JSON.stringify(serverList));
+                return serverList;
+            }
+        }
+    } catch (ex) {
+        console.error(`${getFormattedDateTime()}> ${ex}`);
+    }
+
+    if (!serverList) {
+        localStorage.setItem("servers", JSON.stringify(predefinedServerList));
+        serverList = predefinedServerList;
+        return serverList;
     }
 }

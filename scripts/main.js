@@ -1,6 +1,7 @@
 import { MYFREECAMS_DOMAINS } from "./servers.js";
 import { loadDomainList } from "./servers.js";
-import { serverList } from "./servers.js";
+import { saveDomainList } from "./servers.js";
+import { getServerList } from "./servers.js";
 
 const nodeModelCount = document.querySelector(".model-count");
 const nodeModelListRoot = document.querySelector(".model-list");
@@ -54,7 +55,8 @@ function isModelDisconnected(modelObj) {
         modelObj.previousState === FCVIDEO_TX_IDLE;
 }
 
-function getRandomWchat() {
+async function getRandomWchat() {
+    const serverList = await getServerList();
     if (serverList.chat_servers?.length === 0) { return ""; }
 
     let wchat = "";
@@ -71,7 +73,7 @@ function getFcslUrl() {
     return `wss://${WCHAT}.myfreecams.com/fcsl`;
 }
 
-async function fetchJsonBypassCors(url) {
+export async function fetchJsonBypassCors(url) {
     //To get it working, you must run a special local HTTP-server.
     //You can build suitable one from C# source code: https://github.com/BlackMightyRavenDark/Fetch-server
     try {
@@ -79,7 +81,7 @@ async function fetchJsonBypassCors(url) {
         const r = await fetch(proxyUrl);
         return r.status === 200 ? await r.json() : null;
     } catch (ex) {
-        console.error(`${getFormattedDateTime()}> The CORS bypassing server is down! Can't get full model list!`);
+        console.error(`${getFormattedDateTime()}> The CORS bypassing server is down!`);
         console.error(ex);
         return null;
     }
@@ -116,6 +118,8 @@ async function getModelListResponceJson(msg) {
             }
 
             return responce;
+        } else {
+            console.error(`${getFormattedDateTime()}> Can't get full model list!`);
         }
     }
 
@@ -187,9 +191,9 @@ function getModelIdFromUserId(userId) {
     return FCS_CHANNEL_ID_START + userId;
 }
 
-function getHlsPlaylistUrl(modelObj, aCheckBoxChecked) {
+async function getHlsPlaylistUrl(modelObj, aCheckBoxChecked) {
     const modelId = getModelIdFromUserId(modelObj.userId);
-    const realCamServerId = getRealCamServerId(modelObj.camServer, modelId);
+    const realCamServerId = await getRealCamServerId(modelObj.camServer, modelId);
     const clientVersion = "1.97.22";
     const randomNumberNc = Math.random();
 
@@ -204,10 +208,11 @@ function getHlsPlaylistUrl(modelObj, aCheckBoxChecked) {
     return `${edgeVideoDomain}/llhls/NxServer/${realCamServerId}/ngrp:mfc_${aParameterValue}${modelId}.f4v_cmaf/playlist_sfm4s.m3u8?${query.toString()}`;
 }
 
-function getRealCamServerId(camServ, modelId) {
+async function getRealCamServerId(camServ, modelId) {
     if (!camServ) { return 0; }
 
     const regExp = /^\D+/g;
+    const serverList = await getServerList();
     if (serverList.wzobs_servers.hasOwnProperty(camServ)) {
         const id = serverList.wzobs_servers[camServ];
         return id.replace(regExp, "");
@@ -348,7 +353,7 @@ function findOrCreateModelNode(modelName) {
     return node;
 }
 
-function addOrUpdateModelNode(modelObj) {
+async function addOrUpdateModelNode(modelObj) {
     const nodeModel = findOrCreateModelNode(modelObj.name);
     if (nodeModel.childNodes.length === 0) {
         const nodeName = document.createElement("div");
@@ -370,7 +375,7 @@ function addOrUpdateModelNode(modelObj) {
         nodeCheckBoxA.setAttribute("id", `${modelObj.name}_${modelObj.userId}_${Math.random()}`);
         nodeCheckBoxA.onchange = (e) => addOrUpdateModelNode(modelObj);
 
-        const url = getHlsPlaylistUrl(modelObj, false);
+        const url = await getHlsPlaylistUrl(modelObj, false);
         const nodeUrl = document.createElement("a");
         nodeUrl.textContent = url;
         nodeUrl.setAttribute("href", url);
@@ -403,7 +408,7 @@ function addOrUpdateModelNode(modelObj) {
         nodeStreamState.textContent = `Stream state: ${modelObj.state}`;
         nodeStreamState.style.color = getStreamStateLabelColor(modelObj);
 
-        const url = getHlsPlaylistUrl(modelObj, nodeCheckBoxA.checked);
+        const url = await getHlsPlaylistUrl(modelObj, nodeCheckBoxA.checked);
         nodeUrl.textContent = url;
         nodeUrl.setAttribute("href", url);
     }
@@ -469,8 +474,8 @@ function clearChildNodes(node) {
     }
 }
 
-function connectSocket() {
-    WCHAT = getRandomWchat();
+async function connectSocket() {
+    WCHAT = await getRandomWchat();
     const socket = new WebSocket(getFcslUrl());
 
     socket.onopen = function(e) {
@@ -553,6 +558,13 @@ export function getFormattedDateTime() {
     return date.toUTCString();
 }
 
-clearChildNodes(nodeModelListRoot);
-loadDomainList();
-connectSocket();
+function start() {
+    async function run() {
+        clearChildNodes(nodeModelListRoot);
+        loadDomainList();
+        await getServerList();
+        connectSocket();
+    }
+    run();
+}
+start();
