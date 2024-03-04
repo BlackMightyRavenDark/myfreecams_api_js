@@ -1,3 +1,5 @@
+"use strict";
+
 import { fetchJsonBypassCors } from "./main.js";
 import { getFormattedDateTime } from "./main.js"
 

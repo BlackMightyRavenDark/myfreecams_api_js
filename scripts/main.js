@@ -1,3 +1,5 @@
+"use strict";
+
 import { MYFREECAMS_DOMAINS } from "./servers.js";
 import { loadDomainList } from "./servers.js";
 import { saveDomainList } from "./servers.js";
