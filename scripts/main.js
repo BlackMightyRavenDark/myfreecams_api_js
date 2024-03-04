@@ -45,6 +45,10 @@ function isModelOnline(modelObj) {
         modelObj.state !== FCVIDEO_OFFLINE && modelObj.state !== FCVIDEO_RX_IDLE && modelObj.state !== FCVIDEO_TX_AWAY;
 }
 
+function isStreamFree(streamState) {
+    return streamState !== undefined && streamState !== null && streamState === FCVIDEO_TX_IDLE;
+}
+
 function isModelConnected(modelObj) {
     return modelObj.state !== modelObj.previousState &&
         modelObj.state !== FCVIDEO_RX_IDLE &&
@@ -136,7 +140,7 @@ async function getModelListResponceJson(msg) {
     return null;
 }
 
-function parseModelList(unparsedJson) {
+async function parseModelList(unparsedJson) {
     //TODO: Write a clever parser relying on received "dataConfig" fields order.
     const rData = unparsedJson["rdata"];
     if (rData?.length > 1) {
@@ -180,6 +184,10 @@ function parseModelList(unparsedJson) {
 
                 if (!modelObj["avatarUrl"]) {
                     modelObj["avatarUrl"] = getModelAvatarUrl(modelObj["userId"]);
+                }
+
+                if (!modelObj["streamPreviewImageUrl"]) {
+                    modelObj["streamPreviewImageUrl"] = await getStreamPreviewImageUrl(modelObj);
                 }
 
                 if (dataConfig.length > 8) {
@@ -266,6 +274,17 @@ function getModelAvatarUrl(userId, avatarImageSizeXY) {
     return `https://img.mfcimg.com/photos2/${firstThree}/${userIdString}/avatar.${avatarImageSizeXY}x${avatarImageSizeXY}.jpg`;
 }
 
+async function getStreamPreviewImageUrl(modelObj) {
+    if (isModelOnline(modelObj) && isStreamFree(modelObj.state)) {
+        const resolutions = ["341x192", "427x240", "853x480"];
+        const randomInt = Math.floor(Math.random() * resolutions.length);
+        const camServerId = await getRealCamServerId(modelObj.camServer, getModelIdFromUserId(modelObj.userId));
+        return `https://snap.mfcimg.com/snapimg/${camServerId}/${resolutions[randomInt]}/mfc_${modelObj.userId}?no-cache=${Math.random()}`;
+    }
+
+    return "";
+}
+
 async function processPacket(packet) {
     const splitted = packet.split(" ");
     if (splitted.length > 5 && isJson(splitted[5])) {
@@ -328,6 +347,10 @@ async function processPacket(packet) {
 
                 if (!modelObj["avatarUrl"]) {
                     modelObj["avatarUrl"] = getModelAvatarUrl(modelObj["userId"]);
+                }
+
+                if (!modelObj["streamPreviewImageUrl"]) {
+                    modelObj["streamPreviewImageUrl"] = await getStreamPreviewImageUrl(modelObj);
                 }
 
                 if (isModelConnected(modelObj)) {
