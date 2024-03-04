@@ -423,6 +423,9 @@ async function addOrUpdateModelNode(modelObj) {
         const nodeUserLocation = document.createElement("div");
         nodeUserLocation.textContent = formatUserLocation(modelObj);
 
+        const nodeRoomAbout = document.createElement("div");
+        nodeRoomAbout.textContent = modelObj.about ? `About: ${modelObj.about}` : "";
+
         const nodeCheckBoxA = document.createElement("input");
         nodeCheckBoxA.setAttribute("type", "checkbox");
         nodeCheckBoxA.setAttribute("title", "Set/unset misterious 'a_' parameter in URL (it's needed sometimes)");
@@ -444,6 +447,13 @@ async function addOrUpdateModelNode(modelObj) {
         nodeStreamStateWrapper.appendChild(nodeStreamState);
         nodeStreamStateWrapper.appendChild(nodeStreamStateDescribed);
 
+        const nodeLocationAboutWrapper = document.createElement("div");
+        nodeLocationAboutWrapper.appendChild(nodeUserLocation);
+        nodeLocationAboutWrapper.appendChild(nodeRoomAbout);
+
+        const nodeRoomTopic = document.createElement("div");
+        nodeRoomTopic.textContent = modelObj.topic ? `Topic: ${modelObj.topic}` : "";
+
         const nodeUrlWrapper = document.createElement("div");
         nodeUrlWrapper.appendChild(nodeCheckBoxA);
         nodeUrlWrapper.appendChild(nodeUrl);
@@ -452,22 +462,28 @@ async function addOrUpdateModelNode(modelObj) {
         nodeModelData.classList.add("model-data");
         nodeModelData.appendChild(nodeNameAgeWrapper);
         nodeModelData.appendChild(nodeStreamStateWrapper);
-        nodeModelData.appendChild(nodeUserLocation);
+        nodeModelData.appendChild(nodeLocationAboutWrapper);
 
         nodeModel.appendChild(nodeModelData);
+        nodeModel.appendChild(nodeRoomTopic);
         nodeModel.appendChild(nodeUrlWrapper);
     } else {
-        const nodeUserLocation = nodeModel.childNodes[0].childNodes[2];
         const nodeStreamState = nodeModel.childNodes[0].childNodes[1].childNodes[0];
         const nodeStreamStateDescribed = nodeModel.childNodes[0].childNodes[1].childNodes[1];
-        const nodeCheckBoxA = nodeModel.childNodes[1].childNodes[0];
-        const nodeUrl = nodeModel.childNodes[1].childNodes[1];
+        const nodeUserLocation = nodeModel.childNodes[0].childNodes[2].childNodes[0];
+        const nodeRoomAbout = nodeModel.childNodes[0].childNodes[2].childNodes[1];
+        const nodeRoomTopic = nodeModel.childNodes[1];
+        const nodeCheckBoxA = nodeModel.childNodes[2].childNodes[0];
+        const nodeUrl = nodeModel.childNodes[2].childNodes[1];
 
         nodeUserLocation.textContent = formatUserLocation(modelObj);
+        nodeRoomAbout.textContent = modelObj.about ? `About: ${modelObj.about}` : "";
 
         nodeStreamState.textContent = `Stream state: ${modelObj.state}`;
         nodeStreamState.parentNode.style.color = getStreamStateLabelColor(modelObj);
         nodeStreamStateDescribed.textContent = getStreamStateDescription(modelObj.state);
+
+        nodeRoomTopic.textContent = modelObj.topic ? `Topic: ${modelObj.topic}` : "";
 
         const url = await getHlsPlaylistUrl(modelObj, nodeCheckBoxA.checked);
         nodeUrl.textContent = url;

@@ -63,8 +63,12 @@
             overflow: hidden;
         }
 
-        .model-data > div:nth-child(3) {
+        .model-data > div:nth-child(3) > div:nth-child(1) {
             color: #bbbbbb;
+        }
+
+        .model-data > div:nth-child(3) > div:nth-child(2), .model-item > div:nth-child(2) {
+            color: darkturquoise;
         }
 
         .model-item > div:nth-child(2) {
@@ -72,7 +76,7 @@
             align-items: center;
             gap: 6px;
         }
-</style>
+    </style>
 
     <body>
         <div class="model-count">Found models: 0</div>
