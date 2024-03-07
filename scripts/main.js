@@ -71,14 +71,14 @@ async function getRandomWchat() {
     const serverList = await getServerList();
     if (serverList.chat_servers?.length === 0) { return ""; }
 
-    let wchat = "";
     let tries = 0;
-    while (!wchat.startsWith("wchat") && tries++ <= 100) {
+    while (tries++ <= 100) {
         const randomInt = Math.floor(Math.random() * serverList.chat_servers.length);
-        wchat = serverList.chat_servers[randomInt];
+        const wchat = serverList.chat_servers[randomInt];
+        if (wchat.startsWith("wchat")) { return wchat; }
     }
 
-    return wchat;
+    return "";
 }
 
 function getFcslUrl() {
@@ -581,6 +581,12 @@ function clearChildNodes(node) {
 
 async function connectSocket() {
     WCHAT = await getRandomWchat();
+    if (!WCHAT) {
+        console.error(`${getFormattedDateTime()}> URL generation error`);
+        nodeWchat.textContent = "Error!";
+        return;
+    }
+
     const socket = new WebSocket(getFcslUrl());
 
     socket.onopen = function(e) {
