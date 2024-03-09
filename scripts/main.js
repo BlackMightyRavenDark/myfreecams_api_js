@@ -99,7 +99,7 @@ export async function fetchJsonBypassCors(url) {
     }
 }
 
-async function getModelListResponceJson(msg) {
+async function getModelListResponseJson(msg) {
     const arg1 = msg["msg"]["arg1"];
     const arg2 = msg["msg"]["arg2"];
     const respKey = msg["respkey"];
@@ -291,7 +291,7 @@ async function processPacket(packet) {
         const decoded = decodeURIComponent(splitted[5]);
         const j = JSON.parse(decoded);
         if (j["respkey"] && j.msg?.arg2 === FCL_CAMS) {
-            const unparsedModelsData = await getModelListResponceJson(j);
+            const unparsedModelsData = await getModelListResponseJson(j);
             if (unparsedModelsData) {
                 parseModelList(unparsedModelsData);
             }
