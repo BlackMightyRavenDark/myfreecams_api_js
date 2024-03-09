@@ -179,7 +179,7 @@ async function parseModelList(unparsedJson) {
                 modelObj["flags"] = rData[i][20];
                 modelObj["rank"] = rData[i][21];
                 modelObj["rc"] = rData[i][22];
-                modelObj["topic"] = decodeURIComponent(rData[i][23]);
+                modelObj["topic"] = decodeURIComponent(rData[i][23]) || "";
                 modelObj["hidecs"] = rData[i][24];
 
                 if (!modelObj["avatarUrl"]) {
@@ -194,7 +194,7 @@ async function parseModelList(unparsedJson) {
                     const xObj = dataConfig[8]["x"];
                     if (xObj) {
                         const x = {};
-                        for (let k in xObj) {
+                        for (const k in xObj) {
                             const id = parseInt(k);
                             x[xObj[id]] = rData[i][id + 25];
                         }
@@ -313,16 +313,12 @@ async function processPacket(packet) {
 
                 const uObj = j["u"];
                 if (uObj) {
-                    const age = modelObj["age"] || 0;
-                    if (age === 0) {
+                    if (!modelObj["age"]) {
                         modelObj["age"] = uObj["age"] || 0;
                     }
                     modelObj["about"] = uObj["blurb"];
                     if (!modelObj["camServer"]) {
-                        const newCamServer = uObj["camserv"];
-                        if (newCamServer) {
-                            modelObj["camServer"] = newCamServer;
-                        }
+                        modelObj["camServer"] = uObj["camserv"] || 0;
                     }
                     if (!modelObj["country"]) {
                         modelObj["country"] = uObj["country"]?.trim() || "";
