@@ -589,7 +589,7 @@ async function connectSocket() {
 
     const socket = new WebSocket(getFcslUrl());
 
-    socket.onopen = function(e) {
+    socket.onopen = (e) => {
         nodeWchat.textContent = `Server: ${WCHAT}`;
         console.log(`${getFormattedDateTime()}> Connection is established`);
         socket.send(FC_COMMAND_HELLO);
@@ -599,60 +599,53 @@ async function connectSocket() {
         console.log(`${getFormattedDateTime()}> The ping timer is activated`);
     }
 
-    socket.onmessage = function(event)	{
-        //Process a message from the server.
-        //Don't try to understand this black magic :)
+    socket.onmessage = (event) => {
+        if (!event?.data?.length) { return; }
 
-        if (!event || !event.data || event.data.length < 1) { return; }
+        const packets = [];
+        let dataString = event.data;
+        while (dataString) {
+            if (dataString.length <= 6) {
+                console.error("String length is less or equals 6! It's bad!");
+                console.error("Broken message:", event.data);
+                break;
+            }
 
-        let m_sQueued = "";
-        let nPos = 0;
+            const strLen = dataString.substring(0, 6);
+            dataString = dataString.slice(6);
+            if (dataString === -1) {
+                console.log("String slice failed!");
+                console.error("Message:", event.data);
+                break;
+            }
 
-        m_sQueued += event.data;
+            const packetLength = parseInt(strLen);
+            if (packetLength > dataString.length) {
+                console.error(`Invalid packet length! 'packetLength': ${packetLength} > 'dataString.length': ${dataString.length}`);
+                console.error("Broken message:", event.data);
+                break;
+            }
 
-        while (nPos + 6 < m_sQueued.length)	{
-            // get length of data chunk
-            const slicedString = m_sQueued.slice(nPos, nPos + 6);
-            const nStrLen = parseInt(slicedString);
-
-            // get data chunk
-            if (nStrLen > 0 && nStrLen < 1000000) {
-                if (nPos + nStrLen + 6 > m_sQueued.length) {
-                    // We can't process this packet yet, lets queue it until we get more data
-                    console.error(`${getFormattedDateTime()}> Must queue ${m_sQueued.length - nPos} bytes, pos: ${nPos}, strlen: ${nStrLen} overruns m_sQueued.length: ${m_sQueued.length}`);
-                    break;
-                }
-
-                const sChunk = m_sQueued.slice(nPos + 6, nPos + nStrLen + 6); // nStrLen includes additional 2?
-
-                if (sChunk != -1) {
-                    packets.push(sChunk);
-                } else {
-                    console.error(`${getFormattedDateTime()}> onmessage: chunk sz ${nStrLen}, but slice failed (-1), pos: ${nPos}, m_sQueued.length: ${m_sQueued.length}`);
-                    break;
-                }
-
-                nPos += nStrLen + 6;
-            } else {
-                console.error(`${getFormattedDateTime()}> onmessage: 'nStrLen' is bad: ${nStrLen}, nPos: ${nPos}, m_sQueued.length: ${m_sQueued.length}`);
-                return;
+            packets.push(dataString.substring(0, packetLength).trimRight());
+            dataString = dataString.slice(packetLength);
+            if (dataString === -1) {
+                console.log("String slice failed!");
+                console.error("Message:", event.data);
+                break;
             }
         }
 
-        while (packets.length) {
-            processPacket(packets[0]);
-            packets.splice(0, 1);
-        }
+        packets.forEach(element => processPacket(element));
     };
 
-    socket.onerror = function(e) {
+    socket.onerror = (e) => {
         console.error(`${getFormattedDateTime()}> Socket error`);
         clearInterval(timerPing);
         timerPing = null;
         console.log(`${getFormattedDateTime()}> The ping timer is deactivated`);
     }
 
-    socket.onclose = function(e) {
+    socket.onclose = (e) => {
         nodeWchat.textContent = "Reconnecting...";
         console.log(`${getFormattedDateTime()}> The socket is closed`);
         clearInterval(timerPing);
